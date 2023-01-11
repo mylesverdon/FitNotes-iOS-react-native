@@ -2,6 +2,7 @@ import {
   Column,
   Entity,
   JoinColumn,
+  ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
@@ -10,7 +11,7 @@ import { Exercise } from "./Exercise";
 @Entity("training_log")
 export class TrainingLog {
   constructor(
-    exercise: string,
+    exercise: Exercise,
     date: string,
     metricWeight: number,
     reps: number
@@ -24,9 +25,11 @@ export class TrainingLog {
   @PrimaryGeneratedColumn("increment")
   _id: number;
 
-  // @OneToOne(() => Exercise)
-  @Column() // @JoinColumn
-  exercise: string;
+  @ManyToOne(() => Exercise, (exercise) => exercise.trainingLogs, {
+    eager: true,
+    cascade: false,
+  })
+  exercise: Exercise;
 
   @Column()
   date: string;

@@ -29,7 +29,7 @@ export const DateSelect: FunctionComponent<IDateSelect> = ({
   }, [date]);
 
   return (
-    <View className="flex flex-row items-center">
+    <View className="flex flex-row items-center px-2 bg-white">
       <TouchableOpacity
         className="h-10 w-10 flex items-center justify-center"
         onPress={() => {
@@ -38,20 +38,18 @@ export const DateSelect: FunctionComponent<IDateSelect> = ({
           onDateChange(prevDay);
         }}
       >
-        <IconCaretLeft />
+        <IconCaretLeft fill="black" />
       </TouchableOpacity>
-      <Text className="font-bold text-lg flex-grow text-center">
-        {dateString}
-      </Text>
+      <Text className="text-xl flex-grow text-center">{dateString}</Text>
       <TouchableOpacity
-        className="h-10 w-10 flex items-center justify-center"
+        className="h-10 w-10 flex items-center justify-center px-4"
         onPress={() => {
           const nextDay = new Date(date);
           nextDay.setDate(date.getDate() + 1);
           onDateChange(nextDay);
         }}
       >
-        <IconCaretRight />
+        <IconCaretRight fill="black" />
       </TouchableOpacity>
     </View>
   );
