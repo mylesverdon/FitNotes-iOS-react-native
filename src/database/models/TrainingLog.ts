@@ -34,7 +34,7 @@ export class TrainingLog {
   @Column()
   date: string;
 
-  @Column()
+  @Column("decimal")
   metric_weight: number;
 
   @Column()

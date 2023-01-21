@@ -5,6 +5,7 @@ import {
   View,
   Text,
   Pressable,
+  Keyboard,
 } from "react-native";
 import { Exercise } from "../database/models/Exercise";
 import * as Haptics from "expo-haptics";
@@ -15,7 +16,6 @@ interface IExerciseList {
   editable?: boolean;
   selectedExercise?: Exercise;
   exerciseSelected: (exercise?: Exercise) => void;
-  onTouchStart?: () => void;
 }
 
 export const ExerciseList: FunctionComponent<IExerciseList> = ({
@@ -23,11 +23,13 @@ export const ExerciseList: FunctionComponent<IExerciseList> = ({
   editable = false,
   selectedExercise,
   exerciseSelected,
-  onTouchStart,
 }) => {
   return (
     <FlatList
-      onTouchStart={onTouchStart}
+      onScrollBeginDrag={() => {
+        Keyboard.dismiss();
+      }}
+      keyboardShouldPersistTaps="handled"
       data={exerciseList}
       getItemLayout={(data, index) => ({
         length: 49,

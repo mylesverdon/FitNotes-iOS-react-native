@@ -30,10 +30,16 @@ export class Exercise {
   @Column({ default: 0 })
   exercise_type_id: number;
 
+  @Column({ nullable: true, default: false })
+  default_unit: boolean;
+
+  @Column({ nullable: true, default: true })
+  unit_metric: boolean;
+
   @Column({ nullable: true })
   notes: string;
 
-  @Column({ nullable: true })
+  @Column("decimal")
   weight_increment: number;
 
   @Column({ nullable: true })

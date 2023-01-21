@@ -12,6 +12,8 @@ import { TrainingLog } from "./models/TrainingLog";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Category, defaults as CATEGORY_DEFAULTS } from "./models/Category";
 import { toCommonDate } from "../helpers";
+import { AddExerciseUnits1673724314261 } from "./migrations/1673724314261-AddExerciseUnits";
+import { AddDefaultExerciseUnit1673808666919 } from "./migrations/1673808666919-AddDefaultExerciseUnit";
 
 interface IFitnotesDBContext {
   manager?: EntityManager;
@@ -28,20 +30,10 @@ interface IFitnotesDBContext {
     name: string,
     category: Category
   ) => Promise<Exercise | undefined>;
-  deleteExercise: (exercise: Exercise) => Promise<boolean | undefined>;
   addCategory: (name: string, color: string) => Promise<Category | undefined>;
   clearDB: () => void;
   update: () => void;
 }
-
-const dataSource = new DataSource({
-  database: "fitnotes",
-  driver: require("expo-sqlite"),
-  entities: [TrainingLog, Exercise, Category],
-  synchronize: true,
-  type: "expo",
-  // logging: true,
-});
 
 export const FitnotesDBContext = createContext<IFitnotesDBContext>({
   exercises: [],
@@ -54,7 +46,6 @@ export const FitnotesDBContext = createContext<IFitnotesDBContext>({
   setDate: (date: Date) => {},
   getExerciseLogs: async (exercise: Exercise) => [],
   addExercise: async (name: string, category: Category) => undefined,
-  deleteExercise: async (exercise) => undefined,
   addCategory: async (name: string, color: string) => undefined,
   clearDB: () => {},
   update: () => {},
@@ -66,6 +57,18 @@ export const FitnotesDBProvider: FunctionComponent<{ children: ReactNode }> = ({
   const [manager, setManager] = useState<EntityManager>();
 
   useEffect(() => {
+    const dataSource = new DataSource({
+      database: "fitnotes",
+      driver: require("expo-sqlite"),
+      entities: [TrainingLog, Exercise, Category],
+      migrationsRun: true,
+      migrations: [
+        AddExerciseUnits1673724314261,
+        AddDefaultExerciseUnit1673808666919,
+      ],
+      synchronize: false,
+      type: "expo",
+    });
     dataSource.initialize().then((source) => {
       setManager(source.manager);
     });
@@ -172,16 +175,6 @@ export const FitnotesDBProvider: FunctionComponent<{ children: ReactNode }> = ({
   ): Promise<boolean> => {
     if (!manager) return false;
     return false;
-  };
-
-  const deleteExercise = async (exercise: Exercise): Promise<boolean> => {
-    if (!manager) return false;
-    const res = await manager.delete(Exercise, exercise._id);
-    if (!res) {
-      return false;
-    }
-    update();
-    return true;
   };
 
   const getExerciseLogs = async (
@@ -341,7 +334,6 @@ export const FitnotesDBProvider: FunctionComponent<{ children: ReactNode }> = ({
         setDate: setSelectedDate,
         getExerciseLogs,
         addExercise,
-        deleteExercise,
         addCategory,
         clearDB,
         update,

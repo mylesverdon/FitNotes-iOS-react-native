@@ -1,5 +1,11 @@
 import { FunctionComponent } from "react";
-import { Keyboard, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Keyboard,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { IconCaretDown, IconSearch } from "tabler-icons-react-native";
 import { Category } from "../database/models/Category";
 
@@ -34,6 +40,9 @@ export const SearchBar: FunctionComponent<ISearchBar> = ({
         placeholderTextColor="#888888"
         value={text}
         onChangeText={onTextChange}
+        onFocus={() => {
+          setDropDownOpen(false);
+        }}
       />
       <TouchableOpacity
         className="h-full pl-4 flex flex-row items-center space-x-1.5 border-l-[1px] border-slate-300"

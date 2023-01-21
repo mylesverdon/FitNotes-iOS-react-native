@@ -40,7 +40,14 @@ export const DateSelect: FunctionComponent<IDateSelect> = ({
       >
         <IconCaretLeft fill="black" />
       </TouchableOpacity>
-      <Text className="text-xl flex-grow text-center">{dateString}</Text>
+      <Text
+        className="text-xl flex-grow text-center"
+        onPress={() => {
+          onDateChange(new Date());
+        }}
+      >
+        {dateString}
+      </Text>
       <TouchableOpacity
         className="h-10 w-10 flex items-center justify-center px-4"
         onPress={() => {

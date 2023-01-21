@@ -1,16 +1,5 @@
-import React, {
-  FunctionComponent,
-  SyntheticEvent,
-  useEffect,
-  useState,
-} from "react";
-import {
-  TouchableOpacity,
-  View,
-  TextInput,
-  NativeSyntheticEvent,
-} from "react-native";
-import { NativeComponentType } from "react-native/Libraries/Utilities/codegenNativeComponent";
+import React, { FunctionComponent, useEffect, useRef, useState } from "react";
+import { TextInput, TouchableOpacity, View } from "react-native";
 import { IconMinus, IconPlus } from "tabler-icons-react-native";
 
 interface INumericInput {
@@ -28,12 +17,6 @@ export const NumericInput: FunctionComponent<INumericInput> = ({
   onChange,
   className,
 }) => {
-  const [liveText, setLiveText] = useState<string>("");
-
-  useEffect(() => {
-    setLiveText(value.toString());
-  }, [value]);
-
   const onIncrement = () => onChange(value + step);
   const onDecrement = () => onChange(value - step);
 
@@ -45,26 +28,13 @@ export const NumericInput: FunctionComponent<INumericInput> = ({
       >
         <IconMinus />
       </TouchableOpacity>
-      <TextInput
-        className="h-full flex-grow text-center self-start border-b-2 border-slate-400 mx-2 font-bold"
-        style={{ fontSize: 24 }}
-        keyboardType="numeric"
-        value={liveText}
-        onChangeText={setLiveText}
-        onEndEditing={(e) => {
-          const newVal = e.nativeEvent.text;
-          const newNum = Number(newVal);
-          if (!Number.isNaN(newNum)) {
-            onChange(
-              integer
-                ? Math.round(newNum)
-                : Math.round((newNum + Number.EPSILON) * 100) / 100
-            );
-          } else {
-            setLiveText(value.toString());
-          }
+      <NumberInput
+        value={value}
+        onChange={(value?: number) => {
+          onChange(value ?? 0);
         }}
       />
+
       <TouchableOpacity
         className="flex justify-center items-center aspect-square w-20 bg-slate-200 rounded-r-lg"
         onPress={onIncrement}
@@ -72,5 +42,84 @@ export const NumericInput: FunctionComponent<INumericInput> = ({
         <IconPlus />
       </TouchableOpacity>
     </View>
+  );
+};
+
+interface INumberInput {
+  value: number | undefined;
+  onChange: (value?: number) => void;
+  integer?: boolean;
+  placeholder?: string;
+  clearable?: boolean;
+  nonZero?: boolean;
+  className?: string;
+}
+
+export const NumberInput: FunctionComponent<INumberInput> = ({
+  value,
+  onChange,
+  integer,
+  clearable = false,
+  placeholder = "-",
+  nonZero = false,
+  className,
+}) => {
+  const [endsWith, setEndsWith] = useState<string>("");
+
+  const ref = useRef<TextInput>(null);
+
+  return (
+    <TextInput
+      className="w-24 bg-slate-50 p-2 text-center rounded-lg"
+      ref={ref}
+      style={{ fontSize: 18 }}
+      selectTextOnFocus={true}
+      keyboardType="decimal-pad"
+      value={value?.toString().concat(endsWith)}
+      placeholder={placeholder}
+      onBlur={() => {
+        if (value === 0 || value === undefined) onChange(undefined);
+        setEndsWith("");
+      }}
+      onChangeText={(text) => {
+        if (text.length === 0) {
+          onChange(undefined);
+          ref.current?.blur();
+          return;
+        }
+
+        if (text === ".") {
+          onChange(0);
+          setEndsWith(".");
+          return;
+        }
+
+        const numDots = Array.from(text).filter((char) => char === ".").length;
+        const endsWithDot = !integer && numDots === 1 && text.endsWith(".");
+        const endsWithDotZero = !integer && numDots === 1 && /\.0+$/.test(text);
+        const endsWithZeroWithDot =
+          !integer && numDots === 1 && !endsWithDotZero && /0+$/.test(text);
+
+        const newNum = Number(text);
+        if (!Number.isNaN(newNum)) {
+          onChange(
+            integer
+              ? Math.round(newNum)
+              : Math.round((newNum + Number.EPSILON) * 1000) / 1000
+          );
+        }
+
+        if (endsWithDot) {
+          setEndsWith(".");
+        } else if (endsWithDotZero) {
+          setEndsWith(text.match(/\.0+$/)![0]);
+        } else if (endsWithZeroWithDot) {
+          setEndsWith(text.match(/0+$/)![0]);
+        } else {
+          setEndsWith("");
+        }
+      }}
+      clearButtonMode={clearable && value !== undefined ? "always" : "never"}
+    />
   );
 };

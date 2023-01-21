@@ -1,21 +1,32 @@
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
-import { RootStackParamList } from "../../../App";
+import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
+import {
+  NativeStackNavigationProp,
+  NativeStackScreenProps,
+} from "@react-navigation/native-stack";
+import React, {
+  FunctionComponent,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   FlatList,
+  Keyboard,
   Pressable,
+  ScrollView,
+  Settings,
   Text,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
-  Keyboard,
 } from "react-native";
-import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
-import { Exercise } from "../../database/models/Exercise";
+import { IconTrophy } from "tabler-icons-react-native";
+import { RootStackParamList, SettingsContext } from "../../../App";
 import { NumericInput } from "../../common/NumericInput";
+import { Exercise } from "../../database/models/Exercise";
 import { TrainingLog } from "../../database/models/TrainingLog";
 import { useFitnotesDB } from "../../database/useFitnotesDB";
-import { IconTrophy } from "tabler-icons-react-native";
+import { fromCommonDate, kgToLb, lbToKg } from "../../helpers";
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -28,6 +39,9 @@ const TrackExercise: FunctionComponent<{ exercise: Exercise }> = ({
   const [toUpdate, setToUpdate] = useState<TrainingLog>();
 
   const { log, currLogs, deleteLog, updateLog } = useFitnotesDB();
+  const DEFAULT_METRIC = useContext(SettingsContext).settings.defaultMetric;
+
+  const kgs = exercise.default_unit ? DEFAULT_METRIC : exercise.unit_metric;
 
   const exerciseLogs = useMemo(
     () => currLogs.filter((log) => log.exercise._id === exercise._id),
@@ -37,7 +51,7 @@ const TrackExercise: FunctionComponent<{ exercise: Exercise }> = ({
   useEffect(() => {
     if (toUpdate) {
       setReps(toUpdate.reps);
-      setWeight(toUpdate.metric_weight);
+      setWeight(kgs ? toUpdate.metric_weight : kgToLb(toUpdate.metric_weight));
     }
   }, [toUpdate]);
 
@@ -93,8 +107,7 @@ const TrackExercise: FunctionComponent<{ exercise: Exercise }> = ({
         <TouchableOpacity
           className={`mt-8 w-[80%] h-14 rounded-md flex items-center justify-center bg-green-300`}
           onPress={() => {
-            Keyboard.dismiss();
-            log(exercise, weight, reps);
+            log(exercise, kgs ? weight : lbToKg(weight), reps);
           }}
         >
           <Text className="text-xl">Save</Text>
@@ -122,8 +135,10 @@ const TrackExercise: FunctionComponent<{ exercise: Exercise }> = ({
               <Text className="text-center text-lg">{index + 1}</Text>
             </View>
             <View className="flex-[2] flex flex-row items-center justify-center">
-              <Text className="text-xl font-bold">{item.metric_weight}</Text>
-              <Text className="text-base"> kgs</Text>
+              <Text className="text-xl font-bold">
+                {kgs ? item.metric_weight : kgToLb(item.metric_weight)}
+              </Text>
+              <Text className="text-base">{kgs ? " kg" : " lb"}</Text>
             </View>
             <View className="flex-1 flex flex-row items-center justify-center">
               <Text className="text-center text-xl font-bold">{item.reps}</Text>
@@ -136,13 +151,70 @@ const TrackExercise: FunctionComponent<{ exercise: Exercise }> = ({
   );
 };
 
-const ExerciseHistory: FunctionComponent<{ exercise: Exercise }> = ({
-  exercise,
-}) => {
+const ExerciseHistory: FunctionComponent<{
+  exercise: Exercise;
+  navigation: NativeStackNavigationProp<RootStackParamList, "Exercise Log">;
+}> = ({ exercise, navigation }) => {
+  const { getExerciseLogs, setDate } = useFitnotesDB();
+
+  const [logs, setLogs] = useState<TrainingLog[]>([]);
+
+  useEffect(() => {
+    getExerciseLogs(exercise).then(setLogs);
+  }, [exercise, getExerciseLogs]);
+
+  const dates = useMemo(() => {
+    return new Set(logs.map((log) => log.date));
+  }, [logs]);
+
   return (
-    <View>
-      <Text>History {exercise.name}</Text>
-    </View>
+    <ScrollView className="h-full w-full flex px-8 space-y-4 pt-4">
+      {Array.from(dates.keys()).map((date, idx) => (
+        <TouchableOpacity
+          key={idx}
+          className="w-full bg-white shadow-sm rounded-lg pb-2"
+          onPress={() => {
+            setDate(fromCommonDate(date));
+            navigation.navigate("Home", {});
+          }}
+        >
+          <View className="border-b-2 py-1 border-slate-200">
+            <Text className="text-center text-lg font-bold border-slate-200">
+              {fromCommonDate(date).toDateString()}
+            </Text>
+          </View>
+          <View>
+            {logs
+              .filter((log) => log.date === date)
+              .sort((a, b) => a._id - b._id)
+              .map((log, _idx) => (
+                <View key={_idx} className="flex flex-row mt-1">
+                  {log.is_personal_record && (
+                    <View className="absolute translate-y-[4px] left-5">
+                      <IconTrophy fill="gold" size={18} />
+                    </View>
+                  )}
+                  <View className="flex-grow flex flex-row justify-center items-center">
+                    <Text className="text-center text-lg font-bold">
+                      {log.metric_weight.toFixed(1)}
+                    </Text>
+                    <Text className="text-sm">
+                      {log.exercise.unit_metric ? " kg" : " lb"}
+                    </Text>
+                  </View>
+                  <View className="flex-grow flex flex-row justify-center items-center">
+                    <Text className="text-center text-lg font-bold">
+                      {log.reps}
+                    </Text>
+                    <Text className="text-sm"> reps</Text>
+                  </View>
+                </View>
+              ))}
+          </View>
+        </TouchableOpacity>
+      ))}
+      <View className="h-8" />
+    </ScrollView>
   );
 };
 
@@ -150,7 +222,19 @@ export const ExerciseLogNavigation: FunctionComponent<
   NativeStackScreenProps<RootStackParamList, "Exercise Log">
 > = ({ navigation, route }) => {
   useEffect(() => {
-    navigation.setOptions({ title: route.params.exercise.name });
+    navigation.setOptions({
+      headerTitle: () => (
+        <TouchableOpacity
+          onPress={() => {
+            navigation.navigate("Edit Exercise", {
+              exercise: route.params.exercise,
+            });
+          }}
+        >
+          <Text className="text-lg font-bold">{route.params.exercise.name}</Text>
+        </TouchableOpacity>
+      ),
+    });
   }, [route]);
   return (
     <Tab.Navigator>
@@ -158,7 +242,12 @@ export const ExerciseLogNavigation: FunctionComponent<
         {() => <TrackExercise exercise={route.params.exercise} />}
       </Tab.Screen>
       <Tab.Screen name="History">
-        {() => <ExerciseHistory exercise={route.params.exercise} />}
+        {() => (
+          <ExerciseHistory
+            exercise={route.params.exercise}
+            navigation={navigation}
+          />
+        )}
       </Tab.Screen>
     </Tab.Navigator>
   );
