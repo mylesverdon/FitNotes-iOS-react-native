@@ -12,8 +12,6 @@ import { TrainingLog } from "./models/TrainingLog";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Category, defaults as CATEGORY_DEFAULTS } from "./models/Category";
 import { toCommonDate } from "../helpers";
-import { AddExerciseUnits1673724314261 } from "./migrations/1673724314261-AddExerciseUnits";
-import { AddDefaultExerciseUnit1673808666919 } from "./migrations/1673808666919-AddDefaultExerciseUnit";
 
 interface IFitnotesDBContext {
   manager?: EntityManager;
@@ -31,7 +29,7 @@ interface IFitnotesDBContext {
     category: Category
   ) => Promise<Exercise | undefined>;
   addCategory: (name: string, color: string) => Promise<Category | undefined>;
-  clearDB: () => void;
+  clearDB: (clearDefaults?: boolean) => void;
   update: () => void;
 }
 
@@ -47,7 +45,7 @@ export const FitnotesDBContext = createContext<IFitnotesDBContext>({
   getExerciseLogs: async (exercise: Exercise) => [],
   addExercise: async (name: string, category: Category) => undefined,
   addCategory: async (name: string, color: string) => undefined,
-  clearDB: () => {},
+  clearDB: (clearDefaults?: boolean) => {},
   update: () => {},
 });
 
@@ -61,72 +59,61 @@ export const FitnotesDBProvider: FunctionComponent<{ children: ReactNode }> = ({
       database: "fitnotes",
       driver: require("expo-sqlite"),
       entities: [TrainingLog, Exercise, Category],
-      migrationsRun: true,
-      migrations: [
-        AddExerciseUnits1673724314261,
-        AddDefaultExerciseUnit1673808666919,
-      ],
       synchronize: false,
       type: "expo",
     });
-    dataSource.initialize().then((source) => {
+    dataSource.initialize().then(async (source) => {
+      await clearDB();
+      await dataSource.synchronize();
       setManager(source.manager);
     });
   }, []);
 
   const initDefaults = async () => {
     if (!manager) return;
+    // isInit === null || isInit === "false") {
+    console.log("Setting defaults.");
 
-    const isInit = await AsyncStorage.getItem("defaultsInitialised");
-    if (isInit === null || isInit === "false") {
-      console.log("Setting defaults.");
+    await manager.clear(TrainingLog);
+    await manager.clear(Category);
+    await manager.clear(Exercise);
 
-      manager.clear(TrainingLog);
-      manager.clear(Category);
-      manager.clear(Exercise);
+    await Promise.all(
+      CATEGORY_DEFAULTS.map(async (category) => {
+        const _category = await manager.create(Category, {
+          name: category.name,
+          colour: category.colour,
+        });
+        return manager.save(_category);
+      })
+    );
 
-      await Promise.all(
-        CATEGORY_DEFAULTS.map((category) => {
-          const _category = new Category(category.name, category.colour);
-          _category._id = category.id;
-          return manager.save(_category);
-        })
-      );
+    await Promise.all(
+      EXERCISE_DEFAULTS.map(async (exercise) => {
+        const category = await manager.findOne(Category, {
+          where: { name: exercise.category_name },
+        });
 
-      await Promise.all(
-        EXERCISE_DEFAULTS.map(async (exercise) => {
-          const category = await manager.findOne(Category, {
-            where: { name: exercise.category_name },
-          });
+        if (!category) {
+          console.warn("Could not find category for exercise ", exercise.name);
+          return;
+        }
 
-          if (!category) {
-            console.warn(
-              "Could not find category for exercise ",
-              exercise.name
-            );
-            return;
-          }
+        const _exercise = manager.create(Exercise, {
+          name: exercise.name,
+          category,
+        });
 
-          const _exercise = new Exercise(exercise.name, category);
+        return manager.save(_exercise);
+      })
+    );
 
-          return manager.save(_exercise);
-        })
-      );
-
-      AsyncStorage.setItem("defaultsInitialised", "true");
-
-      update();
-    }
+    AsyncStorage.setItem("defaultsInitialised", "true");
   };
 
-  useEffect(() => {
+  const update = async () => {
     if (!manager) return;
-    initDefaults();
-    update();
-  }, [manager]);
 
-  const update = () => {
-    if (!manager) return;
     manager.find(Category).then(setCategories);
     manager.find(Exercise).then(setExercises);
     manager
@@ -135,6 +122,10 @@ export const FitnotesDBProvider: FunctionComponent<{ children: ReactNode }> = ({
       })
       .then(setCurrLogs);
   };
+
+  useEffect(() => {
+    update();
+  }, [manager]);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -186,13 +177,14 @@ export const FitnotesDBProvider: FunctionComponent<{ children: ReactNode }> = ({
     });
   };
 
-  const clearDB = async () => {
+  const clearDB = async (resetDefault: boolean = true) => {
     if (!manager) return;
-    console.log("Clearning DB");
+    console.log("Clearing DB");
     await manager.clear(TrainingLog);
     await manager.clear(Exercise);
     await manager.clear(Category);
     await AsyncStorage.setItem("defaultsInitialised", "false");
+    await update();
     initDefaults();
   };
 
@@ -200,7 +192,9 @@ export const FitnotesDBProvider: FunctionComponent<{ children: ReactNode }> = ({
 
   const [currLogs, setCurrLogs] = useState<TrainingLog[]>([]);
 
-  useEffect(update, [selectedDate]);
+  useEffect(() => {
+    update();
+  }, [selectedDate]);
 
   const log = async (exercise: Exercise, weight: number, reps: number) => {
     if (!manager) return;

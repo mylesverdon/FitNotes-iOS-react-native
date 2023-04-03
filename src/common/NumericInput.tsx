@@ -7,23 +7,25 @@ interface INumericInput {
   onChange: (value: number) => void;
   step?: number;
   integer?: boolean;
+  narrow?: boolean;
   className?: string;
 }
 
 export const NumericInput: FunctionComponent<INumericInput> = ({
   value,
-  integer = false,
   step = 1,
   onChange,
-  className,
+  narrow,
 }) => {
   const onIncrement = () => onChange(value + step);
   const onDecrement = () => onChange(value - step);
 
   return (
-    <View className={`flex flex-row items-center w-64 ${className}`}>
+    <View className={`flex flex-row items-center w-fit`}>
       <TouchableOpacity
-        className="flex justify-center items-center aspect-square w-20 bg-slate-200 rounded-l-lg"
+        className={`flex justify-center items-center bg-slate-200 rounded-l-lg ${
+          narrow ? "w-10 h-14" : "w-20 h-20"
+        }`}
         onPress={onDecrement}
       >
         <IconMinus />
@@ -33,10 +35,14 @@ export const NumericInput: FunctionComponent<INumericInput> = ({
         onChange={(value?: number) => {
           onChange(value ?? 0);
         }}
+        narrow={narrow}
+        fontSize="lg"
       />
 
       <TouchableOpacity
-        className="flex justify-center items-center aspect-square w-20 bg-slate-200 rounded-r-lg"
+        className={`flex justify-center items-center bg-slate-200 rounded-r-lg ${
+          narrow ? "w-12 h-14" : "w-20 h-20"
+        }`}
         onPress={onIncrement}
       >
         <IconPlus />
@@ -51,8 +57,8 @@ interface INumberInput {
   integer?: boolean;
   placeholder?: string;
   clearable?: boolean;
-  nonZero?: boolean;
-  className?: string;
+  narrow?: boolean;
+  fontSize?: "md" | "lg";
 }
 
 export const NumberInput: FunctionComponent<INumberInput> = ({
@@ -61,8 +67,8 @@ export const NumberInput: FunctionComponent<INumberInput> = ({
   integer,
   clearable = false,
   placeholder = "-",
-  nonZero = false,
-  className,
+  narrow = false,
+  fontSize = "md",
 }) => {
   const [endsWith, setEndsWith] = useState<string>("");
 
@@ -70,13 +76,14 @@ export const NumberInput: FunctionComponent<INumberInput> = ({
 
   return (
     <TextInput
-      className="w-24 bg-slate-50 p-2 text-center rounded-lg"
+      className={`p-2 text-center rounded-lg ${narrow ? "w-16" : "w-24"}`}
       ref={ref}
-      style={{ fontSize: 18 }}
+      style={{ fontSize: fontSize === "md" ? 18 : 24 }}
       selectTextOnFocus={true}
       keyboardType="decimal-pad"
       value={value?.toString().concat(endsWith)}
       placeholder={placeholder}
+      blurOnSubmit={false}
       onBlur={() => {
         if (value === 0 || value === undefined) onChange(undefined);
         setEndsWith("");
@@ -84,7 +91,6 @@ export const NumberInput: FunctionComponent<INumberInput> = ({
       onChangeText={(text) => {
         if (text.length === 0) {
           onChange(undefined);
-          ref.current?.blur();
           return;
         }
 

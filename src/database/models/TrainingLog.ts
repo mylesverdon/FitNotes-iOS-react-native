@@ -1,11 +1,4 @@
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToOne,
-  PrimaryGeneratedColumn,
-} from "typeorm";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Exercise } from "./Exercise";
 
 @Entity("training_log")
@@ -34,36 +27,19 @@ export class TrainingLog {
   @Column()
   date: string;
 
-  @Column("decimal")
+  // Metrics
+  @Column("decimal", { nullable: true })
   metric_weight: number;
-
-  @Column()
+  @Column({ nullable: true })
   reps: number;
-
   @Column({ nullable: true })
-  unit?: number;
-
+  distance?: number;
   @Column({ nullable: true })
-  routine_section_exercise_set_id?: number;
-
-  @Column({ nullable: true })
-  timer_auto_start?: boolean;
+  duration_seconds?: number;
 
   @Column({ nullable: true })
   is_personal_record?: boolean;
 
   @Column({ nullable: true })
-  is_personal_record_first?: boolean;
-
-  @Column({ nullable: true })
   is_complete?: boolean;
-
-  @Column({ nullable: true })
-  is_pending_update?: boolean;
-
-  @Column({ nullable: true })
-  distance?: number;
-
-  @Column({ nullable: true })
-  duration_seconds?: number;
 }

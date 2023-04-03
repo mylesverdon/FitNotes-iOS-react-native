@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "FitLogs",
-    "slug": "FitLogs",
+    "name": "FitNotes iOS",
+    "slug": "fitnotes-ios",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,25 +14,15 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mylesverdon.FitNotes"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
-      }
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
+      "bundleIdentifier": "com.mylesverdon.fitnotes-ios",
+      "buildNumber": "1"
     },
     "extra": {
       "eas": {
-        "projectId": "9d9f938e-ab61-40e6-81b2-02171be6a799"
+        "projectId": "e526ce53-6832-4e3d-b6a3-1b71205c6781"
       }
     }
   }

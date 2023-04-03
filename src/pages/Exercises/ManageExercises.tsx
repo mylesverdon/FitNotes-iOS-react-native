@@ -34,8 +34,6 @@ export const ManageExercises: FunctionComponent<
     getExerciseLogs,
     exercises,
     categories,
-    addExercise,
-    deleteExercise,
     manager,
     update,
   } = useFitnotesDB();

@@ -8,6 +8,24 @@ import {
 import { Category } from "./Category";
 import { TrainingLog } from "./TrainingLog";
 
+export enum WeightUnit {
+  DEFAULT = "default",
+  KG = "kg",
+  LB = "lb",
+}
+
+export enum DistanceUnit {
+  DEFAULT = "default",
+  MILES = "miles",
+  KILOMETERS = "kilometers",
+}
+
+export enum TimeUnit {
+  DEFAULT = "default",
+  SECONDS = "seconds",
+  MINUTES = "minutes",
+}
+
 @Entity("exercise")
 export class Exercise {
   constructor(name: string, category: Category) {
@@ -27,23 +45,36 @@ export class Exercise {
   })
   category: Category;
 
-  @Column({ default: 0 })
-  exercise_type_id: number;
+  // These columns are used as the exercise type
+  @Column({ default: true })
+  uses_weight: boolean;
+  @Column({ default: true })
+  uses_reps: boolean;
+  @Column({ default: false })
+  uses_distance: boolean;
+  @Column({ default: false })
+  uses_time: boolean;
 
-  @Column({ nullable: true, default: false })
-  default_unit: boolean;
+  // Weight units
+  @Column({ type: "enum", enum: WeightUnit, default: WeightUnit.DEFAULT })
+  weight_unit: WeightUnit;
+  @Column("decimal", { nullable: true })
+  weight_increment: number | undefined;
 
-  @Column({ nullable: true, default: true })
-  unit_metric: boolean;
+  // Distance units
+  @Column({ type: "enum", enum: DistanceUnit, default: DistanceUnit.DEFAULT })
+  distance_unit: DistanceUnit;
+  @Column("decimal", { default: "default" })
+  distance_increment: number | undefined;
+
+  // Time units
+  @Column({ type: "enum", enum: TimeUnit, default: TimeUnit.DEFAULT })
+  time_unit: TimeUnit;
+  @Column("decimal", { default: "default" })
+  time_increment: number | undefined;
 
   @Column({ nullable: true })
   notes: string;
-
-  @Column("decimal")
-  weight_increment: number;
-
-  @Column({ nullable: true })
-  default_graph_id: number;
 
   @Column({ nullable: true })
   default_rest_time: number;

@@ -1,5 +1,5 @@
 import { createContext, FunctionComponent, useEffect, useState } from "react";
-import { Keyboard, TouchableOpacity, Text, View, Button } from "react-native";
+import { TouchableOpacity, Button } from "react-native";
 import { FitnotesDBProvider } from "./src/database/useFitnotesDB";
 import { Home } from "./src/pages/Home/Home";
 import { NavigationContainer } from "@react-navigation/native";
@@ -7,8 +7,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import "reflect-metadata";
 import { IconSettings } from "tabler-icons-react-native";
 import { SelectExercise } from "./src/pages/Exercises/SelectExercise";
-import { Provider as PaperProvider } from "react-native-paper";
-import { Exercise } from "./src/database/models/Exercise";
+import { DistanceUnit, Exercise, WeightUnit, TimeUnit } from "./src/database/models/Exercise";
 import { ExerciseLogNavigation } from "./src/pages/ExerciseLog/ExerciseLog";
 import { ManageCategories } from "./src/pages/Categories/ManageCategories";
 import { ManageExercises } from "./src/pages/Exercises/ManageExercises";
@@ -16,6 +15,7 @@ import { EditExercise } from "./src/pages/Exercises/EditExercise";
 import { Settings } from "./src/pages/Settings/Settings";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AddExercise } from "./src/pages/Exercises/AddExercise";
+import { ImportData } from "./src/pages/Settings/ImportData";
 
 export type RootStackParamList = {
   Home: {};
@@ -29,13 +29,15 @@ export type RootStackParamList = {
     exercise: Exercise;
   };
   "Manage Categories": {};
+  "Import Data": {};
   Settings: {};
 };
 
 interface ISettings {
-  defaultMetric: boolean;
-  metricIncrement: number;
-  imperialIncrement: number;
+  weightUnit: WeightUnit;
+  distanceUnit: DistanceUnit;
+  timeUnit: 
+  defaultIncrement: number;
 }
 
 interface ISettingsContext {
@@ -44,9 +46,9 @@ interface ISettingsContext {
 }
 
 const DEFAULT_SETTINGS: ISettings = {
-  defaultMetric: true,
-  metricIncrement: 2.5,
-  imperialIncrement: 2.5,
+  weightUnit: WeightUnit.DEFAULT,
+  distanceUnit: DistanceUnit.DEFAULT,
+  timeUnit: TimeUnit.DEFAULT,
 };
 
 export const SettingsContext = createContext<ISettingsContext>({
@@ -95,10 +97,7 @@ export const App: FunctionComponent = () => {
                 ),
               })}
             />
-            <Stack.Screen
-              name="Exercise Log"
-              component={ExerciseLogNavigation}
-            />
+            <Stack.Screen name="Exercise Log" component={ExerciseLogNavigation} />
             <Stack.Screen name="Settings" component={Settings} />
             <Stack.Screen
               name="Select Exercise"
@@ -109,6 +108,20 @@ export const App: FunctionComponent = () => {
                     title="Edit"
                     onPress={() => {
                       navigation.navigate("Manage Exercises", {});
+                    }}
+                  />
+                ),
+              })}
+            />
+            <Stack.Screen
+              name="Import Data"
+              component={ImportData}
+              options={({ navigation }) => ({
+                headerLeft: () => (
+                  <Button
+                    title="Cancel"
+                    onPress={() => {
+                      navigation.goBack();
                     }}
                   />
                 ),

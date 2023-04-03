@@ -15,7 +15,6 @@ import {
   Keyboard,
   Pressable,
   ScrollView,
-  Settings,
   Text,
   TouchableOpacity,
   View,
@@ -23,7 +22,7 @@ import {
 import { IconTrophy } from "tabler-icons-react-native";
 import { RootStackParamList, SettingsContext } from "../../../App";
 import { NumericInput } from "../../common/NumericInput";
-import { Exercise } from "../../database/models/Exercise";
+import { Exercise, WeightUnits } from "../../database/models/Exercise";
 import { TrainingLog } from "../../database/models/TrainingLog";
 import { useFitnotesDB } from "../../database/useFitnotesDB";
 import { fromCommonDate, kgToLb, lbToKg } from "../../helpers";
@@ -33,15 +32,23 @@ const Tab = createMaterialTopTabNavigator();
 const TrackExercise: FunctionComponent<{ exercise: Exercise }> = ({
   exercise,
 }) => {
-  const [weight, setWeight] = useState<number>(20);
-  const [reps, setReps] = useState<number>(10);
+  const [weight, setWeight] = useState<number>(0);
+  const [reps, setReps] = useState<number>(0);
+  const [time, setTime] = useState<number>(0);
+  const [distance, setDistance] = useState<number>(0);
 
   const [toUpdate, setToUpdate] = useState<TrainingLog>();
 
   const { log, currLogs, deleteLog, updateLog } = useFitnotesDB();
   const DEFAULT_METRIC = useContext(SettingsContext).settings.defaultMetric;
 
-  const kgs = exercise.default_unit ? DEFAULT_METRIC : exercise.unit_metric;
+  const kgs = (exercise.weight_unit === WeightUnits.DEFAULT && 
+
+  const numMetrics =
+    +exercise.uses_reps +
+    +exercise.uses_weight +
+    +exercise.uses_time +
+    +exercise.uses_distance;
 
   const exerciseLogs = useMemo(
     () => currLogs.filter((log) => log.exercise._id === exercise._id),
@@ -72,18 +79,65 @@ const TrackExercise: FunctionComponent<{ exercise: Exercise }> = ({
       onPress={() => {
         Keyboard.dismiss();
       }}
-      className="w-full h-full flex items-center px-8 bg-white"
+      className="w-full h-full flex items-center px-6 pt-2 bg-white"
     >
       {/* Weight */}
-      <View className="mt-4">
-        <Text className="text-lg font-bold text-center">Weight</Text>
-        <NumericInput onChange={setWeight} value={weight} step={1.5} />
+      <View className="w-full items-center justify-center flex-wrap flex flex-row">
+        {exercise.uses_weight && (
+          <View className="mt-4 px-2">
+            <Text className={`text-lg font-bold text-center`}>Weight</Text>
+            <View className="bg-slate-50">
+              <NumericInput
+                onChange={setWeight}
+                value={weight}
+                step={1.5}
+                narrow={numMetrics > 2}
+              />
+            </View>
+          </View>
+        )}
+        {/* Reps */}
+        {exercise.uses_reps && (
+          <View className="mt-4 px-2">
+            <Text className="text-lg font-bold text-center">Reps</Text>
+            <View className="bg-slate-50">
+              <NumericInput
+                onChange={setReps}
+                value={reps}
+                narrow={numMetrics > 2}
+              />
+            </View>
+          </View>
+        )}
+
+        {/* Distance */}
+        {exercise.uses_distance && (
+          <View className="mt-4 px-2">
+            <Text className="text-lg font-bold text-center">Distance</Text>
+            <View className="bg-slate-50">
+              <NumericInput
+                onChange={setReps}
+                value={reps}
+                narrow={numMetrics > 2}
+              />
+            </View>
+          </View>
+        )}
+        {/* Distance */}
+        {exercise.uses_time && (
+          <View className="mt-4 px-2">
+            <Text className="text-lg font-bold text-center">Time</Text>
+            <View className="bg-slate-50">
+              <NumericInput
+                onChange={setReps}
+                value={reps}
+                narrow={numMetrics > 2}
+              />
+            </View>
+          </View>
+        )}
       </View>
-      {/* Reps */}
-      <View className="mt-4">
-        <Text className="text-lg font-bold text-center">Reps</Text>
-        <NumericInput onChange={setReps} value={reps} integer />
-      </View>
+
       {toUpdate ? (
         <View className="mt-8 flex flex-row space-x-2 w-[80%] items-center">
           <TouchableOpacity
@@ -231,7 +285,9 @@ export const ExerciseLogNavigation: FunctionComponent<
             });
           }}
         >
-          <Text className="text-lg font-bold">{route.params.exercise.name}</Text>
+          <Text className="text-lg font-bold">
+            {route.params.exercise.name}
+          </Text>
         </TouchableOpacity>
       ),
     });

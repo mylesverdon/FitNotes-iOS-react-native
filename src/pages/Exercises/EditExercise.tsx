@@ -1,10 +1,5 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import React, {
-  FunctionComponent,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import React, { FunctionComponent, ReactNode, useCallback, useEffect, useState } from "react";
 import {
   TextInput,
   TouchableOpacity,
@@ -15,18 +10,24 @@ import {
   Button,
   Pressable,
   Alert,
+  Switch,
 } from "react-native";
 import {
+  Icon123,
   IconCaretDown,
+  IconClock,
+  IconDeviceWatch,
   IconPencil,
   IconPlus,
+  IconRulerMeasure,
   IconWeight,
+  TablerIcon,
 } from "tabler-icons-react-native";
 import { RootStackParamList } from "../../../App";
 import { Category } from "../../database/models/Category";
 import { useFitnotesDB } from "../../database/useFitnotesDB";
 import { NumberInput } from "../../common/NumericInput";
-import { Exercise } from "../../database/models/Exercise";
+import { DistanceUnit, Exercise, TimeUnit, WeightUnit } from "../../database/models/Exercise";
 import { TrainingLog } from "../../database/models/TrainingLog";
 
 export const EditExercise: FunctionComponent<
@@ -39,57 +40,81 @@ export const EditExercise: FunctionComponent<
   // Exercise details
   const [name, setName] = useState<string>("");
   const [category, setCategory] = useState<Category>();
-  const [unit, setUnit] = useState<"Default" | "Kg" | "Lb">("Default");
-  const [increment, setIncrement] = useState<number | undefined>();
-  const [notes, setNotes] = useState<string>();
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>(WeightUnit.DEFAULT);
+  const [weightIncrement, setWeightIncrement] = useState<number | undefined>();
+  const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>(DistanceUnit.DEFAULT);
+  const [distanceIncrement, setDistanceIncrement] = useState<number | undefined>();
+  const [timeUnit, setTimeUnit] = useState<TimeUnit>(TimeUnit.DEFAULT);
+  const [timeIncrement, setTimeIncrement] = useState<number | undefined>();
+  const [notes, setNotes] = useState<string>("");
+  const [tracksWeight, setTracksWeight] = useState<boolean>(false);
+  const [tracksReps, setTracksReps] = useState<boolean>(false);
+  const [tracksDistance, setTracksDistance] = useState<boolean>(false);
+  const [tracksTime, setTracksTime] = useState<boolean>(false);
+
+  const depArr = [
+    exercise,
+    category,
+    manager,
+    name,
+    weightUnit,
+    weightIncrement,
+    distanceUnit,
+    timeUnit,
+    notes,
+    tracksReps,
+    tracksDistance,
+    tracksTime,
+    tracksWeight,
+  ];
 
   const updateExercise = useCallback(async () => {
     if (!exercise || !category || !manager) {
       console.log("Failed");
       return;
     }
-    console.log({
-      name,
-      category,
-      default_unit: unit === "Default",
-      unit_metric: unit !== "Lb",
-      notes: notes ?? "",
-    });
     const res = await manager.update(
       Exercise,
-      { name: exercise.name },
+      { _id: exercise._id },
       {
         name,
         category,
-        default_unit: unit === "Default",
-        unit_metric: unit !== "Lb",
+        weight_unit: weightUnit,
         weight_increment: increment,
+        disatnce_unit: disatnceUnit,
+        disatnce_increment: increment,
         notes: notes ?? "",
+        uses_reps: tracksReps,
+        uses_weight: tracksWeight,
+        uses_distance: tracksDistance,
+        uses_time: tracksTime,
       }
     );
     if (res) {
       update();
       navigation.goBack();
     }
-  }, [exercise, manager, name, category, increment, unit, notes]);
+  }, depArr);
 
   useEffect(() => {
     navigation.setOptions({
       headerLeft: () => <Button title="Cancel" onPress={navigation.goBack} />,
       headerRight: () => <Button title="Save" onPress={updateExercise} />,
     });
-  }, [exercise, manager, name, category, increment, unit, notes]);
+  }, depArr);
 
   useEffect(() => {
     const { exercise: _exercise } = route.params;
     setExercise(_exercise);
     setName(_exercise.name);
     setCategory(_exercise.category);
-    setUnit(
-      _exercise.default_unit ? "Default" : _exercise.unit_metric ? "Kg" : "Lb"
-    );
+    setWeightUnit(_exercise.weight_unit);
     setIncrement(_exercise.weight_increment);
     setNotes(_exercise.notes);
+    setTracksReps(_exercise.uses_reps);
+    setTracksWeight(_exercise.uses_weight);
+    setTracksTime(_exercise.uses_time);
+    setTracksDistance(_exercise.uses_distance);
   }, [route]);
 
   // Component state
@@ -202,11 +227,7 @@ export const EditExercise: FunctionComponent<
                   }}
                 >
                   <View className="w-3">
-                    <IconPencil
-                      className="-translate-x-0.5"
-                      size={16}
-                      color="#AAAAAA"
-                    />
+                    <IconPencil className="-translate-x-0.5" size={16} color="#AAAAAA" />
                   </View>
                   <Text className="text-base">Manage categories</Text>
                 </TouchableOpacity>
@@ -217,63 +238,90 @@ export const EditExercise: FunctionComponent<
       </View>
 
       {/* Defaults */}
-      <Text className="pt-3 pl-1 text-base">Defaults</Text>
+      <Text className="pt-3 pl-1 text-base">Metrics</Text>
       <View className="flex p-2 bg-white rounded-lg">
-        {/* Default Units */}
-        <View className="flex flex-row items-center space-x-3 pt-1 pr-1 border-b-[1px] border-slate-200 pb-2">
+        {/* Weight */}
+        <View
+          className={`flex flex-row items-center space-x-3 pt-1 pr-1 ${
+            tracksWeight && "border-b-[1px] border-slate-200 pb-2"
+          }`}
+        >
           <View className="flex justify-center items-center rounded-lg w-8 h-8 bg-green-500">
             <IconWeight color="white" strokeWidth={1} />
           </View>
           <View className="flex-grow">
-            <Text className="text-lg">Units</Text>
+            <Text className="text-lg">Weight</Text>
           </View>
-          <View className="flex flex-row items-center bg-slate-100 rounded-lg">
-            <Pressable
-              className={`w-18 px-2 py-1 rounded-lg ${
-                unit === "Default" ? "bg-blue-300 shadow-sm" : ""
-              }`}
-              onPress={() => setUnit("Default")}
-            >
-              <Text className="text-lg text-center">Default</Text>
-            </Pressable>
-            <View className="h-4 border-l-[1px] border-slate-200" />
-            <Pressable
-              className={`w-12 px-2 py-1 rounded-lg ${
-                unit === "Kg" ? "bg-blue-300 shadow-sm" : ""
-              }`}
-              onPress={() => setUnit("Kg")}
-            >
-              <Text className="text-lg text-center">Kg</Text>
-            </Pressable>
-            <View className="h-4 border-l-[1px] border-slate-200" />
-            <Pressable
-              className={`w-12 px-2 py-1 rounded-lg ${
-                unit === "Lb" ? "bg-blue-300 shadow-sm" : ""
-              }`}
-              onPress={() => setUnit("Lb")}
-            >
-              <Text className="text-lg text-center">Lb</Text>
-            </Pressable>
-          </View>
+          <Switch value={tracksWeight} onChange={(ev) => setTracksWeight(ev.nativeEvent.value)} />
         </View>
-        {/* Default Units */}
-        <View className="flex flex-row items-center space-x-3 pt-2 pr-1 ">
-          <View className="flex justify-center items-center rounded-lg w-8 h-8 bg-green-500">
-            <IconPlus color="white" strokeWidth={1} />
-          </View>
-          <View className="flex-grow">
-            <Text className="text-lg">Increment</Text>
-          </View>
-          <View className="flex flex-row items-center bg-slate-100 rounded-lg">
-            <NumberInput
-              value={increment}
-              onChange={setIncrement}
-              placeholder="Default"
-              clearable
-              nonZero
-            />
-          </View>
-        </View>
+        {tracksWeight && (
+          <>
+            <View className="flex flex-row items-center space-x-3 pt-1 pr-1 border-b-[1px] border-slate-200 pb-2">
+              <View className="flex justify-center items-center rounded-lg w-8 h-8 bg-green-500">
+                <IconWeight color="white" strokeWidth={1} />
+              </View>
+              <View className="flex-grow">
+                <Text className="text-lg">Units</Text>
+              </View>
+              <View className="flex flex-row items-center bg-slate-100 rounded-lg">
+                <Pressable
+                  className={`w-18 px-2 py-1 rounded-lg ${
+                    unit === "Default" ? "bg-blue-300 shadow-sm" : ""
+                  }`}
+                  onPress={() => setUnit("Default")}
+                >
+                  <Text className="text-lg text-center">Default</Text>
+                </Pressable>
+                <View className="h-4 border-l-[1px] border-slate-200" />
+                <Pressable
+                  className={`w-12 px-2 py-1 rounded-lg ${
+                    unit === "Kg" ? "bg-blue-300 shadow-sm" : ""
+                  }`}
+                  onPress={() => setUnit("Kg")}
+                >
+                  <Text className="text-lg text-center">Kg</Text>
+                </Pressable>
+                <View className="h-4 border-l-[1px] border-slate-200" />
+                <Pressable
+                  className={`w-12 px-2 py-1 rounded-lg ${
+                    unit === "Lb" ? "bg-blue-300 shadow-sm" : ""
+                  }`}
+                  onPress={() => setUnit("Lb")}
+                >
+                  <Text className="text-lg text-center">Lb</Text>
+                </Pressable>
+              </View>
+            </View>
+            {/* Default Units */}
+            <View className="flex flex-row items-center space-x-3 pt-2 pr-1 ">
+              <View className="flex justify-center items-center rounded-lg w-8 h-8 bg-green-500">
+                <IconPlus color="white" strokeWidth={1} />
+              </View>
+              <View className="flex-grow">
+                <Text className="text-lg">Increment</Text>
+              </View>
+              <View className="flex flex-row items-center bg-slate-100 rounded-lg">
+                <NumberInput value={increment} onChange={setIncrement} placeholder="Default" />
+              </View>
+            </View>
+          </>
+        )}
+
+        <SettingField
+          name="Track Reps"
+          Icon={Icon123}
+          component={<Switch value={tracksReps} onValueChange={setTracksReps} />}
+        />
+        <SettingField
+          name="Track Time"
+          Icon={IconClock}
+          component={<Switch value={tracksTime} onValueChange={setTracksTime} />}
+        />
+        <SettingField
+          name="Track Distance"
+          Icon={IconRulerMeasure}
+          component={<Switch value={tracksDistance} onValueChange={setTracksDistance} />}
+        />
       </View>
 
       {/* Notes */}
@@ -297,5 +345,23 @@ export const EditExercise: FunctionComponent<
         <Text className="text-black text-base">Delete</Text>
       </TouchableOpacity>
     </Pressable>
+  );
+};
+
+export const SettingField: FunctionComponent<{
+  name: string;
+  Icon: TablerIcon;
+  component: ReactNode;
+}> = ({ name, Icon, component }) => {
+  return (
+    <View className="flex flex-row items-center space-x-3 pt-2 pr-1">
+      <View className="flex justify-center items-center rounded-lg w-8 h-8 bg-green-500">
+        <Icon color="white" strokeWidth={1} />
+      </View>
+      <View className="flex-grow">
+        <Text className="text-lg">{name}</Text>
+      </View>
+      {component}
+    </View>
   );
 };

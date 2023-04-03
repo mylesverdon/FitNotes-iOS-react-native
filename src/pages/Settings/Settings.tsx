@@ -13,16 +13,17 @@ import {
   IconCaretRight,
   IconDatabaseImport,
   IconFolders,
-  IconTableImport,
   IconWeight,
 } from "tabler-icons-react-native";
 import { RootStackParamList, SettingsContext } from "../../../App";
-import { NumberInput, NumericInput } from "../../common/NumericInput";
+import { NumberInput } from "../../common/NumericInput";
+import { useFitnotesDB } from "../../database/useFitnotesDB";
 
 export const Settings: FunctionComponent<
   NativeStackScreenProps<RootStackParamList, "Settings">
 > = ({ navigation }) => {
   const { settings, updateSettings } = useContext(SettingsContext);
+  const { clearDB } = useFitnotesDB();
 
   return (
     <Pressable
@@ -95,12 +96,16 @@ export const Settings: FunctionComponent<
           <View className="flex-grow">
             <Text className="text-lg">Kg Increment</Text>
           </View>
-          <NumberInput
-            value={settings.metricIncrement}
-            onChange={(val) => updateSettings({ metricIncrement: val ?? 2.5 })}
-            placeholder={"2.5"}
-            nonZero
-          />
+          <View className="bg-slate-100 rounded-md">
+            <NumberInput
+              value={settings.metricIncrement}
+              onChange={(val) =>
+                updateSettings({ metricIncrement: val ?? 2.5 })
+              }
+              placeholder={"2.5"}
+              nonZero
+            />
+          </View>
         </View>
         {/* Default Lb increment */}
         <View className="flex flex-row items-center space-x-3 pt-1 pr-1">
@@ -110,14 +115,16 @@ export const Settings: FunctionComponent<
           <View className="flex-grow">
             <Text className="text-lg">Lb Increment</Text>
           </View>
-          <NumberInput
-            value={settings.imperialIncrement}
-            onChange={(val) =>
-              updateSettings({ imperialIncrement: val ?? 2.5 })
-            }
-            placeholder={"2.5"}
-            nonZero
-          />
+          <View className="bg-slate-100 rounded-md">
+            <NumberInput
+              value={settings.imperialIncrement}
+              onChange={(val) =>
+                updateSettings({ imperialIncrement: val ?? 2.5 })
+              }
+              placeholder={"2.5"}
+              nonZero
+            />
+          </View>
         </View>
       </View>
 
@@ -139,13 +146,29 @@ export const Settings: FunctionComponent<
         {/* Manage Exercises */}
         <TouchableOpacity
           className="flex flex-row items-center space-x-3 pt-1"
-          onPress={() => navigation.navigate("Manage Exercises", {})}
+          onPress={() => {
+            navigation.navigate("Import Data", {});
+          }}
         >
           <View className="flex justify-center items-center rounded-md w-8 h-8 bg-blue-600">
             <IconDatabaseImport color="white" strokeWidth={1} />
           </View>
           <View className="flex-grow">
             <Text className="text-lg">Import from FitNotes Android</Text>
+          </View>
+          <IconCaretRight strokeWidth={0} fill="grey" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          className="flex flex-row items-center space-x-3 pt-1"
+          onPress={() => {
+            clearDB();
+          }}
+        >
+          <View className="flex justify-center items-center rounded-md w-8 h-8 bg-blue-600">
+            <IconDatabaseImport color="white" strokeWidth={1} />
+          </View>
+          <View className="flex-grow">
+            <Text className="text-lg">Reset to default</Text>
           </View>
           <IconCaretRight strokeWidth={0} fill="grey" />
         </TouchableOpacity>
